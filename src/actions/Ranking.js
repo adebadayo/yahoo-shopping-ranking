@@ -1,5 +1,6 @@
 import fetchJsonp from "fetch-jsonp";
 import qs from 'qs';
+import {replace} from "react-router-redux";
 
 require('dotenv').config();
 
@@ -24,8 +25,15 @@ const finishRequest = categoryId => ({
 })
 
 export const fetchRanking = categoryId => {
-  return async dispatch => {
-    dispatch(startRequest(categoryId));
+  return async (dispatch, getState) => {
+    const categories = getState().shopping.categories;
+    const category = categories.find(category => (category.id === categoryId))
+    if(typeof category === 'undefined'){
+      dispatch(replace('/'));
+      return;
+    }
+
+    dispatch(startRequest(category));
 
     const queryString = qs.stringify({
       appid: APP_ID,
@@ -36,11 +44,11 @@ export const fetchRanking = categoryId => {
     try {
       const responce = await fetchJsonp(`${API_URL}?${queryString}`)
       const data = await responce.json();
-      dispatch(receiveData(categoryId, null, data))
+      dispatch(receiveData(category, null, data))
     } catch(err) {
-      dispatch(receiveData(categoryId, err))
+      dispatch(receiveData(category, err))
     }
 
-    dispatch(finishRequest(categoryId))
+    dispatch(finishRequest(category))
   }
 }
